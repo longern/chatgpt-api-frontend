@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, height=device-height" />
     <title>OpenAI Chat</title>
     <style>
@@ -86,11 +87,11 @@
   <body>
     <div id="app"></div>
     <script
-      src="https://unpkg.com/react@18/umd/react.development.js"
+      src="https://unpkg.com/react@18/umd/react.production.min.js"
       crossorigin
     ></script>
     <script
-      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
       crossorigin
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
@@ -203,6 +204,7 @@
             React.createElement("input", {
               id: "input-box",
               type: "text",
+              "aria-label": "Chat with AI",
               onKeyUp: async (ev) => {
                 if (ev.key === "Enter") {
                   if (
