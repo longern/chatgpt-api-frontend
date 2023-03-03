@@ -48,13 +48,15 @@
         height: 100%;
         font-size: 16px;
       }
-      .chat-container {
+      main {
         flex-grow: 1;
+        overflow-y: auto;
+      }
+      .chat-container {
         display: flex;
         flex-direction: column;
         width: 100%;
         max-width: 768px;
-        overflow-y: auto;
         margin: 0 auto;
       }
       .chat-container .message {
@@ -140,7 +142,8 @@
         const ref = React.useRef(null);
         React.useEffect(() => {
           hljs.highlightAll({ noHighlightRe: /^hljs$/ });
-          ref.current.scrollTop = ref.current.scrollHeight;
+          const main = ref.current.parentElement;
+          main.scrollTop = main.scrollHeight;
         });
 
         return React.createElement(
@@ -185,10 +188,14 @@
             ),
           ]),
 
-          React.createElement(ChatContainer, {
-            messages,
-            key: "chat-container",
-          }),
+          React.createElement(
+            "main",
+            { key: "main" },
+            React.createElement(ChatContainer, {
+              messages,
+              key: "chat-container",
+            })
+          ),
 
           React.createElement(
             "footer",
