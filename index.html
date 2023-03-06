@@ -163,11 +163,19 @@
       function ChatContainer({ messages }) {
         const ref = React.useRef(null);
         React.useEffect(() => {
+          // Highlight code blocks but skip ones that are already highlighted
+          ref.current.querySelectorAll("pre code:not(.hljs)").forEach((node) => {
+            hljs.highlightElement(node);
+          });
+
+          // Highlight code blocks in the last message
           const last = ref.current.lastElementChild;
           for (const node of last ? last.querySelectorAll("pre code") : []) {
             node.textContent = node.innerText;
             hljs.highlightElement(node);
           }
+
+          // Scroll to bottom
           const main = ref.current.parentElement;
           main.scrollTop = main.scrollHeight;
         });
