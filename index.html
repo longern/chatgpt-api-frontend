@@ -119,22 +119,37 @@
         }
       }
 
+      async function getApiUrl() {
+        if (getApiUrl.url) return getApiUrl.url;
+        try {
+          const response = await fetch("/api/completions", {
+            method: "OPTIONS",
+          });
+          if (response.status !== 200) throw new Error();
+          getApiUrl.url = "/api/completions";
+          const corsHeaders = (
+            response.headers.get("Access-Control-Allow-Headers") || ""
+          ).toLowerCase();
+          getApiUrl.tokenRequired = corsHeaders.includes("authorization");
+        } catch (e) {
+          getApiUrl.url = "https://api.openai.com/v1/chat/completions";
+          getApiUrl.tokenRequired = true;
+        }
+        return getApiUrl.url;
+      }
+
       async function complete(messages, token, progressCallback) {
-        const response = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "gpt-3.5-turbo",
-              messages: messages,
-              stream: true,
-            }),
-          }
-        );
+        const headers = { "Content-Type": "application/json" };
+        if (getApiUrl.tokenRequired) headers.Authorization = `Bearer ${token}`;
+        const response = await fetch(await getApiUrl(), {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: messages,
+            stream: true,
+          }),
+        });
 
         const reader = response.body.getReader();
         let responseObj = {};
@@ -164,9 +179,11 @@
         const ref = React.useRef(null);
         React.useEffect(() => {
           // Highlight code blocks but skip ones that are already highlighted
-          ref.current.querySelectorAll("pre code:not(.hljs)").forEach((node) => {
-            hljs.highlightElement(node);
-          });
+          ref.current
+            .querySelectorAll("pre code:not(.hljs)")
+            .forEach((node) => {
+              hljs.highlightElement(node);
+            });
 
           // Highlight code blocks in the last message
           const last = ref.current.lastElementChild;
@@ -196,7 +213,10 @@
       }
 
       export function App() {
-        const token = getToken();
+        let token = null;
+        getApiUrl().then(() => {
+          if (getApiUrl.tokenRequired) token = getToken();
+        });
         const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
         sessions[0] = sessions[0] || [];
 
