@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="description" content="ChatGPT API Demo" />
     <meta name="viewport" content="width=device-width, height=device-height" />
     <title>OpenAI Chat</title>
     <style>
@@ -25,8 +26,14 @@
       button {
         border: none;
         background-color: transparent;
-        color: white;
+        color: inherit;
+        padding: 0;
         cursor: pointer;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
       }
       #app {
         display: flex;
@@ -43,14 +50,47 @@
         background-color: #333;
         color: white;
       }
-      header>button {
+      header > button {
         position: absolute;
         padding: 12px;
       }
+      button.menu {
+        left: 0;
+      }
       button.clear {
         right: 0;
+      }
+      .hidden {
+        display: none;
+      }
+      aside {
+        position: fixed;
+        top: 0;
+        width: 100%;
         height: 100%;
-        font-size: 16px;
+        z-index: 1;
+        display: flex;
+      }
+      .sidebar-container {
+        background-color: #333;
+        color: white;
+        width: 300px;
+        overflow-y: auto;
+      }
+      .sidebar-modal {
+        flex: 1 0;
+        min-width: 64px;
+        background-color: rgba(0, 0, 0, 0.3);
+      }
+      li > button {
+        width: 100%;
+        height: 48px;
+        text-align: left;
+        padding: 0 16px;
+        transition: background-color 0.2s;
+      }
+      li > button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
       }
       main {
         flex-grow: 1;
@@ -215,20 +255,109 @@
         );
       }
 
+      export function Sidebar({
+        numConversations,
+        onConversationClick,
+        onModalClick,
+        onClearClick,
+        onSettingsClick,
+      }) {
+        return [
+          React.createElement(
+            "div",
+            { key: "sidebar-container", className: "sidebar-container" },
+            [
+              React.createElement("ul", { key: "list" }, [
+                React.createElement("li", { key: "new" }, [
+                  React.createElement(
+                    "button",
+                    {
+                      key: "new",
+                      onClick: () => {
+                        onConversationClick && onConversationClick(-1);
+                      },
+                    },
+                    "New Chat"
+                  ),
+                ]),
+                ...Array(numConversations)
+                  .fill(null)
+                  .map((_, index) => {
+                    return React.createElement("li", { key: index }, [
+                      React.createElement(
+                        "button",
+                        {
+                          key: `conversation-${index}`,
+                          onClick: () => {
+                            onConversationClick && onConversationClick(index);
+                          },
+                        },
+                        `Conversation ${index + 1}`
+                      ),
+                    ]);
+                  }),
+                React.createElement("li", { key: "clear" }, [
+                  React.createElement(
+                    "button",
+                    {
+                      key: "clear",
+                      onClick: () => {
+                        onClearClick && onClearClick();
+                      },
+                    },
+                    "Clear Conversations"
+                  ),
+                ]),
+                React.createElement("li", { key: "settings" }, [
+                  React.createElement(
+                    "button",
+                    {
+                      key: "settings",
+                      onClick: () => {
+                        onSettingsClick && onSettingsClick();
+                      },
+                    },
+                    "Settings"
+                  ),
+                ]),
+              ]),
+            ]
+          ),
+          React.createElement("div", {
+            key: "sidebar-modal",
+            className: "sidebar-modal",
+            onClick: () => {
+              onModalClick && onModalClick();
+            },
+          }),
+        ];
+      }
+
       export function App() {
         let token = null;
         getApiUrl().then(() => {
           if (getApiUrl.tokenRequired) token = getToken();
         });
-        const sessions = JSON.parse(localStorage.getItem("sessions") || "[]");
-        sessions[0] = sessions[0] || [];
+        const conversations = JSON.parse(
+          localStorage.getItem("conversations") || "[]"
+        );
+        conversations[0] = conversations[0] || [];
 
-        const [messages, setMessages] = React.useState(sessions[0]);
+        const [conversationIndex, setConversationIndex] = React.useState(0);
+        const [numConversations, setNumConversations] = React.useState(
+          conversations.length
+        );
+        const [messages, setMessages] = React.useState(
+          conversations[conversationIndex]
+        );
         const messagesRef = React.useRef(messages);
-        const saveMessages = (value) => {
+        const saveMessages = (value, index) => {
           setMessages(value);
-          localStorage.setItem("sessions", JSON.stringify([value]));
+          conversations[index] = value;
+          localStorage.setItem("conversations", JSON.stringify(conversations));
         };
+
+        const [showSidebar, setShowSidebar] = React.useState(false);
 
         return [
           React.createElement("header", { key: "header" }, [
@@ -236,9 +365,25 @@
             React.createElement(
               "button",
               {
+                key: "menu",
+                onClick: () => {
+                  setShowSidebar(!showSidebar);
+                },
+                className: "menu",
+              },
+              React.createElement("img", {
+                src: "/assets/img/menu.svg",
+                width: "24",
+                height: "24",
+                alt: "Menu",
+              })
+            ),
+            React.createElement(
+              "button",
+              {
                 key: "clear",
                 onClick: () => {
-                  saveMessages([]);
+                  saveMessages([], conversationIndex);
                   messagesRef.current = [];
                 },
                 className: "clear",
@@ -251,6 +396,45 @@
               })
             ),
           ]),
+
+          React.createElement(
+            "aside",
+            {
+              key: "sidebar",
+              className: showSidebar ? "sidebar" : "sidebar hidden",
+            },
+
+            React.createElement(Sidebar, {
+              messages,
+              key: "sidebar",
+              numConversations,
+
+              onConversationClick: (index) => {
+                if (index === -1) {
+                  conversations.unshift([]);
+                  setNumConversations(conversations.length);
+                  index = 0;
+                }
+                setConversationIndex(index);
+                saveMessages(conversations[index], index);
+                messagesRef.current = conversations[index];
+                setShowSidebar(false);
+              },
+
+              onModalClick: () => {
+                setShowSidebar(false);
+              },
+
+              onClearClick: () => {
+                localStorage.removeItem("conversations");
+                setNumConversations(1);
+                setConversationIndex(0);
+                messagesRef.current = [];
+                setMessages([]);
+                setShowSidebar(false);
+              },
+            })
+          ),
 
           React.createElement(
             "main",
@@ -282,13 +466,16 @@
                     ...messagesRef.current,
                     { role: "user", content: message },
                   ];
-                  saveMessages(messagesRef.current);
+                  saveMessages(messagesRef.current, conversationIndex);
                   try {
                     const completion = await complete(
                       messagesRef.current,
                       token,
                       (message) =>
-                        saveMessages([...messagesRef.current, message])
+                        saveMessages(
+                          [...messagesRef.current, message],
+                          conversationIndex
+                        )
                     );
                     messagesRef.current = [...messagesRef.current, completion];
                   } catch (error) {
