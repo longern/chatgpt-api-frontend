@@ -43,8 +43,11 @@
         background-color: #333;
         color: white;
       }
-      button.clear {
+      header>button {
         position: absolute;
+        padding: 12px;
+      }
+      button.clear {
         right: 0;
         height: 100%;
         font-size: 16px;
@@ -240,7 +243,12 @@
                 },
                 className: "clear",
               },
-              "Clear"
+              React.createElement("img", {
+                src: "/assets/img/cleaning_services.svg",
+                width: "24",
+                height: "24",
+                alt: "Clear",
+              })
             ),
           ]),
 
