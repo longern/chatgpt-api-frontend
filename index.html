@@ -203,12 +203,16 @@
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               if (line.includes("[DONE]")) return responseObj;
-              const data = JSON.parse(line.slice(6));
-              const delta = data.choices[0].delta;
-              for (const key in delta) {
-                if (!(key in responseObj)) responseObj[key] = delta[key];
-                else responseObj[key] += delta[key];
-                progressCallback(responseObj);
+              try {
+                const data = JSON.parse(line.slice(6));
+                const delta = data.choices[0].delta;
+                for (const key in delta) {
+                  if (!(key in responseObj)) responseObj[key] = delta[key];
+                  else responseObj[key] += delta[key];
+                  progressCallback(responseObj);
+                }
+              } catch (e) {
+                console.log("Error parsing line:", line);
               }
             }
           }
