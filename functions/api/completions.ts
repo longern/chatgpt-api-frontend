@@ -1,8 +1,8 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
   const token =
-    env.OPENAI_API_KEY ||
-    request.headers.get("Authorization").replace("Bearer ", "");
+    (request.headers.get("Authorization") || "").replace("Bearer ", "") ||
+    env.OPENAI_API_KEY;
 
   return fetch(env.OPENAI_API_URL, {
     method: "POST",
@@ -22,7 +22,7 @@ export async function onRequestOptions(context) {
     "access-control-allow-origin": "*",
     "access-control-allow-methods": "POST",
     "access-control-allow-headers": "content-type",
-  }
+  };
   if (!tokenProvided)
     headers["access-control-allow-headers"] += ", authorization";
   return new Response(null, { headers });
