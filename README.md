@@ -1,5 +1,5 @@
 # chatgpt-api-frontend
-Frontend of ChatGPT API, with an optional Cloudflare Worker backend to proxy requests and store tokens.
+Frontend of ChatGPT API, with an optional Cloudflare Pages Functions backend to proxy requests and store tokens.
 
 ## Features
 - [x] Chat with gpt-3.5-turbo model
